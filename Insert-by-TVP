@@ -1,0 +1,68 @@
+ALTER PROCEDURE usp_agent_PushDataToTableByTVP
+     @Data YourTableType READONLY
+AS
+BEGIN
+    SET NOCOUNT ON;
+	--WAITFOR DELAY '00:05:00'
+    DECLARE @FailedRows TABLE (
+         DATE_TIME DATETIME
+		,MODULE_ID VARCHAR(40)
+    );
+
+    DECLARE @ProcessedRowCount INT = 0; -- Số lượng dòng thành công
+
+    BEGIN TRY
+        -- Bước 1: Insert toàn bộ TVP vào bảng và ghi lại số dòng thành công
+        INSERT PROD_OFFLINE_HIST (DATE_TIME, MODULE_ID)
+			SELECT DATE_TIME, CASE WHEN MODULE_ID = '' THEN NULL ELSE MODULE_ID END
+		FROM @Data;
+        
+        SET @ProcessedRowCount = @@ROWCOUNT; -- Lấy số lượng dòng đã thêm thành công
+
+    END TRY
+    BEGIN CATCH
+        -- Nếu có lỗi ở bước 1, thử insert từng dòng một vào bảng ProcessedData
+        DECLARE @MaxRowNum INT;
+        DECLARE @Temp INT;
+		SELECT @Temp = MIN(ROW_NUM),
+			   @MaxRowNum = MAX(ROW_NUM) FROM @Data;
+
+		DECLARE @DATE_TIME DATETIME
+		DECLARE @MODULE_ID VARCHAR(40)
+		
+    WHILE @Temp <= @MaxRowNum
+        BEGIN
+			SET @DATE_TIME = NULL
+			SET @MODULE_ID = NULL
+			
+      SELECT @DATE_TIME = DATE_TIME,
+				   @MODULE_ID = CASE WHEN MODULE_ID = '' THEN NULL ELSE MODULE_ID END
+			  FROM @Data
+			  WHERE ROW_NUM = @Temp
+
+            BEGIN TRY
+                -- Thử insert dòng vào bảng ProcessedData
+                INSERT PROD_OFFLINE_HIST (DATE_TIME, MODULE_ID)
+				VALUES (@DATE_TIME, CASE WHEN MODULE_ID = '' THEN NULL ELSE MODULE_ID END)
+                SET @ProcessedRowCount = @ProcessedRowCount + 1; -- Tăng số lượng dòng thành công lên 1
+            END TRY
+            BEGIN CATCH
+                -- Nếu có lỗi, thêm dòng đó vào @FailedRows
+                INSERT INTO @FailedRows ( DATE_TIME, MODULE_ID ) 
+				VALUES ( @DATE_TIME, CASE WHEN MODULE_ID = '' THEN NULL ELSE MODULE_ID END
+						);
+            END CATCH
+
+            SET @Temp = @Temp + 1;
+        END
+    END CATCH;
+
+	-- Trả về thông tin chi tiết
+    SELECT 'Rows_Success' AS Type, @ProcessedRowCount AS Count
+    UNION ALL
+    SELECT 'Rows_Error' AS Type, COUNT(*) FROM @FailedRows;
+	-- Details
+    SELECT 'DATA_ERROR' AS Type ,* FROM @FailedRows;
+
+END
+
