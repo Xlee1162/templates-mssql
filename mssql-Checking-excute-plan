@@ -1,0 +1,12 @@
+
+-- Câu lệnh kiểm tra chiến lược thực thi
+SELECT UseCounts, TEXT, query_plan
+FROM sys.dm_exec_cached_plans cp
+dm_exec_sql_text(plan_handle) sqltext
+CROSS APPLY sys.
+dm_exec_query_plan(plan_handle)queryplan
+CROSS APPLY sys.
+'%from Wecommit%'
+WHERE text LIKE
+and text NOT LIKE
+'%SELECT UseCounts%
