@@ -1,0 +1,38 @@
+
+-- COPY top 10* records từ tất cả các bảng của DB khác
+-- Chuyển sang cơ sở dữ liệu 'DatabaseA'
+USE DatabaseA;
+
+DECLARE @TableName NVARCHAR(MAX);
+DECLARE @SQL NVARCHAR(MAX);
+
+DECLARE table_cursor CURSOR FOR
+SELECT QUOTENAME(name)
+FROM sys.tables;
+
+OPEN table_cursor;
+FETCH NEXT FROM table_cursor INTO @TableName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- Kiểm tra xem bảng đã tồn tại trong cơ sở dữ liệu 'DatabaseB' hay không
+    IF EXISTS (SELECT * FROM DatabaseB.INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @TableName)
+    BEGIN
+        -- Bảng đã tồn tại, thực hiện sao chép dữ liệu
+        SET @SQL = 'INSERT INTO DatabaseB..' + @TableName + ' SELECT TOP 10 * FROM ' + @TableName;
+        EXEC sp_executesql @SQL;
+    END
+    ELSE
+    BEGIN
+        -- Bảng chưa tồn tại, tạo bảng và sao chép dữ liệu
+        SET @SQL = 'SELECT TOP 10 * INTO DatabaseB..' + @TableName + ' FROM ' + @TableName;
+        EXEC sp_executesql @SQL;
+    END
+    
+    FETCH NEXT FROM table_cursor INTO @TableName;
+END
+
+CLOSE table_cursor;
+DEALLOCATE table_cursor;
+
+
