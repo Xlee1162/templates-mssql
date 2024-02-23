@@ -5,8 +5,10 @@ BEGIN
     SET NOCOUNT ON;
 	--WAITFOR DELAY '00:05:00'
     DECLARE @FailedRows TABLE (
-         DATE_TIME DATETIME
-		,MODULE_ID VARCHAR(40)
+	ERROR_NO
+	,ERROR_MSG,
+        ,DATE_TIME DATETIME
+	,MODULE_ID VARCHAR(40)
     );
 
     DECLARE @ProcessedRowCount INT = 0; -- Số lượng dòng thành công
@@ -26,12 +28,15 @@ BEGIN
         DECLARE @Temp INT;
 		SELECT @Temp = MIN(ROW_NUM),
 			   @MaxRowNum = MAX(ROW_NUM) FROM @Data;
-
+		DECLARE @ERROR_NO INT
+		DECLARE @ERROR_MSG NVARCHAR(255)
 		DECLARE @DATE_TIME DATETIME
 		DECLARE @MODULE_ID VARCHAR(40)
 		
     WHILE @Temp <= @MaxRowNum
         BEGIN
+			SET @ERROR_NO = NULL
+			SET @ERROR_MSG = NULL
 			SET @DATE_TIME = NULL
 			SET @MODULE_ID = NULL
 			
@@ -48,8 +53,10 @@ BEGIN
             END TRY
             BEGIN CATCH
                 -- Nếu có lỗi, thêm dòng đó vào @FailedRows
-                INSERT INTO @FailedRows ( DATE_TIME, MODULE_ID ) 
-				VALUES ( @DATE_TIME, CASE WHEN MODULE_ID = '' THEN NULL ELSE MODULE_ID END
+		SET @ERROR_NO = ERROR_NUMBER();
+		SET @ERROR_MSG = ERROR_MESSAGE()
+                INSERT INTO @FailedRows ( ERROR_NO,ERROR_MSG, DATE_TIME, MODULE_ID ) 
+				VALUES ( @ERROR_NO,@ERROR_MSG,@DATE_TIME, CASE WHEN MODULE_ID = '' THEN NULL ELSE MODULE_ID END
 						);
             END CATCH
 
