@@ -1,0 +1,12 @@
+IF OBJECT_ID('tempdb..#Copy') IS NOT NULL
+    DROP TABLE #Copy
+
+SELECT
+    T.*
+INTO
+    #Copy
+FROM
+    YourTable AS T
+-- if not using WHERE then it will be copy all data
+WHERE
+    1 = 0
