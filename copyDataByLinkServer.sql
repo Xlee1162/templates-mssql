@@ -30,10 +30,10 @@ DECLARE @SchemaName NVARCHAR(256)
 DECLARE @sql NVARCHAR(MAX)
 DECLARE @ColumnList NVARCHAR(MAX)
 DECLARE @IdentityColumn NVARCHAR(128)
-DECLARE @SourceSvr nvarchar(100) ='107.107.53.90'
-DECLARE @SourceDb nvarchar(100) ='NEO_S_CMS'
+DECLARE @SourceSvr nvarchar(100) ='...'
+DECLARE @SourceDb nvarchar(100) ='...'
 DECLARE @StrSourceSvrAndDb nvarchar(200) ='[' + @SourceSvr + '].[' + @SourceDb + ']'
-DECLARE @TargetDb nvarchar(100) ='NEO_S_CMS'
+DECLARE @TargetDb nvarchar(100) ='...'
 DECLARE @nrow nvarchar(50) = '1000'
 
 DECLARE table_cursor CURSOR FOR 
